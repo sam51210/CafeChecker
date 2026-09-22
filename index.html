@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="description" content="Wii U serial number checker" />
+        <title>CaféChecker</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='black'/%3E%3Ctext x='9' y='24' fill='white' font-size='24'%3Eu%3C/text%3E%3C/svg%3E"
+        />
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                background: #000;
+                color: #fff;
+                font:
+                    16px Arial,
+                    sans-serif;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+            }
+            main {
+                width: 100%;
+                max-width: 360px;
+            }
+            label {
+                display: block;
+                margin-bottom: 12px;
+            }
+            input {
+                width: 100%;
+                background: #000;
+                color: #fff;
+                border: 1px solid #777;
+                border-radius: 0;
+                padding: 10px;
+                font: 16px monospace;
+            }
+            input:focus {
+                outline: 1px solid #fff;
+                outline-offset: 2px;
+            }
+            #result {
+                line-height: 1.5;
+                margin: 16px 0 0;
+                overflow-wrap: anywhere;
+            }
+            #result:empty {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <form id="form" novalidate>
+                <label for="serial">Wii U serial</label
+                ><input
+                    id="serial"
+                    name="serial"
+                    type="text"
+                    autocomplete="off"
+                    autocapitalize="characters"
+                    spellcheck="false"
+                    aria-label="enter wii u serial"
+                    aria-describedby="result"
+                />
+            </form>
+            <p id="result" role="status" aria-live="polite"></p>
+        </main>
+        <script>
+            "use strict";
+            const regions = {
+                A: "Australian",
+                B: "Brazilian",
+                E: "Euro",
+                J: "Japanese",
+                M: "Middle Eastern",
+                R: "Argentinian",
+                W: "American",
+            };
+            function checkSerial(value) {
+                const match = /^([FG])([ABEJMRW])([FHM]?)([0-9]{9})(?![\s\S])/.exec(value);
+                if (!match)
+                    return {
+                        valid: false,
+                        text: "This is not a real serial!",
+                    };
+                const digits = match[4];
+                let total = 0;
+                for (let i = 0; i < 8; i++) total += Number(digits[i]) * (i % 2 === 0 ? 1 : 3);
+                const expected = (10 - (total % 10)) % 10;
+                if (Number(digits[8]) !== expected)
+                    return { valid: false, text: `This is not a real serial!` };
+                return {
+                    valid: true,
+                    text: `${match[1] === "F" ? "Black" : "White"} ${regions[match[2]]} Wii U${match[2] === "R" ? "" : ""}`,
+                };
+            }
+            const input = document.getElementById("serial"),
+                result = document.getElementById("result");
+            function showResult() {
+                const checked = checkSerial(input.value);
+                result.textContent = checked.text;
+                input.setAttribute("aria-invalid", String(!checked.valid));
+            }
+            document.getElementById("form").addEventListener("submit", (event) => {
+                event.preventDefault();
+                showResult();
+            });
+            input.addEventListener("input", () => {
+                result.textContent = "";
+                input.removeAttribute("aria-invalid");
+            });
+            const initialSerial = new URLSearchParams(window.location.search).get("i");
+            if (initialSerial !== null) {
+                input.value = initialSerial;
+                showResult();
+            }
+        </script>
+    </body>
+</html>
